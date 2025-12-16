@@ -8,6 +8,7 @@ interface Resume {
 }
 
 interface Feedback {
+    raw: React.JSX.Element;
     overallScore: number;
     ATS: {
         score: number;

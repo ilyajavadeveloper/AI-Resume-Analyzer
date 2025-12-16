@@ -5,24 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="476fc732-c1a4-4219-bd8a-905821243526" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/public/readme/hero.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/readme/jsmpro.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/readme/videokit.webp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/ATS.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ATS.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Accordion.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Accordion.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Details.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Details.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/FileUploader.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/FileUploader.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/ResumeCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ResumeCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/ScoreBadge.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ScoreBadge.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/ScoreCircle.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ScoreCircle.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/ScoreGaudge.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ScoreGaudge.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/Summary.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/Summary.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/home.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/resume.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/resume.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes/upload.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/upload.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/wipe.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/wipe.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,12 +20,12 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "ilyajavadeveloper"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;ilyajavadeveloper&quot;
   }
-}]]></component>
+}</component>
   <component name="GitToolBoxStore">
     <option name="recentBranches">
       <RecentBranches>
@@ -63,12 +51,12 @@
       </RecentBranches>
     </option>
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/ilyajavadeveloper/AI-Resume-Analyzer.git",
-    "accountId": "51511c33-3974-467e-8087-f023549c59f0"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/ilyajavadeveloper/AI-Resume-Analyzer.git&quot;,
+    &quot;accountId&quot;: &quot;51511c33-3974-467e-8087-f023549c59f0&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -81,10 +69,13 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
     "junie.onboarding.icon.badge.shown": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -107,13 +98,14 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\PROG\New Projects\ai-resume-analyzier\public\readme" />
       <recent name="C:\PROG\New Projects\ai-resume-analyzier\public" />
     </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-WS-251.29188.1" />
+        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-WS-253.28294.332" />
       </set>
     </attachedChunks>
   </component>
@@ -126,11 +118,26 @@
       <updated>1764750540223</updated>
       <workItem from="1764750541306" duration="800000" />
       <workItem from="1764770282567" duration="14000" />
-      <workItem from="1764823800389" duration="7472000" />
+      <workItem from="1764823800389" duration="7809000" />
+      <workItem from="1764922969891" duration="1078000" />
+      <workItem from="1765035360019" duration="1053000" />
+      <workItem from="1765169348467" duration="305000" />
+      <workItem from="1765863148989" duration="564000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/сonstants/index.ts</url>
+          <line>60</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

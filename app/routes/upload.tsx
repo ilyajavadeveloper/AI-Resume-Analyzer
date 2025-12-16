@@ -5,7 +5,7 @@ import Navbar from "~/components/Navbar";
 import FileUploader from "~/components/FileUploader";
 import { usePuterStore } from "~/lib/puter";
 import { generateUUID } from "~/lib/utils";
-import { prepareInstructions } from "~/constants"; // ⚠️ УБЕДИСЬ, ЧТО ТУТ ЛАТИНИЦА
+import {prepareInstructions} from "../../сonstants";
 
 const Upload = () => {
     const { fs, ai, kv } = usePuterStore();

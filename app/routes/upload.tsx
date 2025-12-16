@@ -7,16 +7,17 @@ import { usePuterStore } from "~/lib/puter";
 import { generateUUID } from "~/lib/utils";
 import {prepareInstructions} from "../../сonstants";
 
+
 const Upload = () => {
-    const { fs, ai, kv } = usePuterStore();
+    const { fs, ai, kv, puterReady } = usePuterStore();
     const navigate = useNavigate();
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusText, setStatusText] = useState("");
     const [file, setFile] = useState<File | null>(null);
 
-    const handleFileSelect = (file: File | null) => {
-        setFile(file);
+    const handleFileSelect = (selected: File | null) => {
+        setFile(selected);
     };
 
     const handleAnalyze = async ({
@@ -31,68 +32,68 @@ const Upload = () => {
         file: File;
     }) => {
         try {
-            if (!fs || !ai || !kv) {
-                throw new Error("Services not ready");
+            if (!puterReady) {
+                throw new Error("Puter not ready yet");
             }
 
             setIsProcessing(true);
-
-            // 1️⃣ Upload PDF
             setStatusText("Uploading resume...");
-            const uploadedFile = await fs.upload([file]);
-            if (!uploadedFile) {
-                throw new Error("Failed to upload resume");
+
+            /* ---------- UPLOAD ---------- */
+            const uploaded = await fs.upload([file]);
+            if (!uploaded?.path) {
+                throw new Error("Upload failed");
             }
 
-            // 2️⃣ Save initial data
-            setStatusText("Preparing data...");
-            const uuid = generateUUID();
+            /* ---------- SAVE BASE ---------- */
+            setStatusText("Saving resume data...");
+            const id = generateUUID();
 
-            const data: any = {
-                id: uuid,
-                resumePath: uploadedFile.path,
+            const resumeData = {
+                id,
+                resumePath: uploaded.path,
                 companyName,
                 jobTitle,
                 jobDescription,
                 feedback: null,
             };
 
-            await kv.set(`resume:${uuid}`, JSON.stringify(data));
+            await kv.set(`resume:${id}`, JSON.stringify(resumeData));
 
-            // 3️⃣ AI analysis
+            /* ---------- AI (MOCK / SAFE) ---------- */
             setStatusText("Analyzing resume...");
-            const feedback = await ai.feedback(
-                uploadedFile.path,
+
+            const response = await ai.feedback(
+                uploaded.path,
                 prepareInstructions({ jobTitle, jobDescription })
             );
 
-            if (!feedback) {
-                throw new Error("AI returned no feedback");
-            }
+            const content =
+                typeof response.message.content === "string"
+                    ? response.message.content
+                    : response.message.content?.[0]?.text ?? "";
 
-            const feedbackText =
-                typeof feedback.message.content === "string"
-                    ? feedback.message.content
-                    : feedback.message.content[0]?.text;
-
-            let parsedFeedback;
+            let feedback;
             try {
-                parsedFeedback = JSON.parse(feedbackText);
+                feedback = JSON.parse(content);
             } catch {
-                parsedFeedback = { raw: feedbackText };
+                feedback = { raw: content };
             }
 
-            data.feedback = parsedFeedback;
-            await kv.set(`resume:${uuid}`, JSON.stringify(data));
+            await kv.set(
+                `resume:${id}`,
+                JSON.stringify({ ...resumeData, feedback })
+            );
 
-            // 4️⃣ Done
-            setStatusText("Analysis complete, redirecting...");
-            navigate(`/resume/${uuid}`);
+            /* ---------- DONE ---------- */
+            setStatusText("Done. Redirecting...");
+            navigate(`/resume/${id}`);
         } catch (err) {
             console.error("UPLOAD ERROR:", err);
-            const message =
-                err instanceof Error ? err.message : "Unknown error";
-            setStatusText(`Error: ${message}`);
+            setStatusText(
+                err instanceof Error ? err.message : "Unexpected error"
+            );
+            setIsProcessing(false);
         }
     };
 
@@ -103,16 +104,17 @@ const Upload = () => {
         const formData = new FormData(e.currentTarget);
 
         handleAnalyze({
-            companyName: formData.get("company-name") as string,
-            jobTitle: formData.get("job-title") as string,
-            jobDescription: formData.get("job-description") as string,
+            companyName: (formData.get("company-name") as string) || "",
+            jobTitle: (formData.get("job-title") as string) || "",
+            jobDescription: (formData.get("job-description") as string) || "",
             file,
         });
     };
 
     return (
-        <main className="bg-[url('/images/bg-main.svg')] bg-cover">
+        <main className="bg-[url('/images/bg-main.svg')] bg-cover min-h-screen">
             <Navbar />
+
             <section className="main-section">
                 <div className="page-heading py-16">
                     <h1>Smart feedback for your dream job</h1>
@@ -137,15 +139,27 @@ const Upload = () => {
                             onSubmit={handleSubmit}
                             className="flex flex-col gap-4 mt-8"
                         >
-                            <input name="company-name" placeholder="Company Name" />
-                            <input name="job-title" placeholder="Job Title" />
+                            <input
+                                name="company-name"
+                                placeholder="Company Name"
+                            />
+                            <input
+                                name="job-title"
+                                placeholder="Job Title"
+                            />
                             <textarea
                                 name="job-description"
                                 rows={5}
                                 placeholder="Job Description"
                             />
+
                             <FileUploader onFileSelect={handleFileSelect} />
-                            <button className="primary-button" type="submit">
+
+                            <button
+                                type="submit"
+                                className="primary-button"
+                                disabled={!file}
+                            >
                                 Analyze Resume
                             </button>
                         </form>

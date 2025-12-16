@@ -78,10 +78,31 @@ export const usePuterStore = create<PuterStore>((set, get) => {
 
     const signIn = async () => {
         const puter = getPuter();
-        if (!puter) return setError("Puter not available");
-        await puter.auth.signIn();
-        await checkAuthStatus();
+        if (!puter) {
+            setError("Puter not available");
+            return;
+        }
+
+        set({ isLoading: true, error: null });
+
+        try {
+            await puter.auth.signIn();
+            await checkAuthStatus();
+        } catch (err: any) {
+            // 🔥 ВАЖНО: пользователь просто закрыл окно
+            if (err?.error === "auth_window_closed") {
+                console.warn("Auth popup closed by user");
+                set({ isLoading: false });
+                return;
+            }
+
+            console.error("Auth error:", err);
+            setError(err?.msg || "Authentication failed");
+        } finally {
+            set({ isLoading: false });
+        }
     };
+
 
     const signOut = async () => {
         const puter = getPuter();

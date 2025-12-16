@@ -3,60 +3,97 @@ import { useNavigate } from "react-router";
 import { usePuterStore } from "~/lib/puter";
 
 const WipeApp = () => {
-    const { auth, isLoading, error, clearError, fs, ai, kv } = usePuterStore();
+    const { auth, isLoading, puterReady, fs, kv } = usePuterStore();
     const navigate = useNavigate();
-    const [files, setFiles] = useState<FSItem[]>([]);
+    const [files, setFiles] = useState<any[]>([]);
+    const [loadingFiles, setLoadingFiles] = useState(false);
 
-    const loadFiles = async () => {
-        const files = (await fs.readDir("./")) as FSItem[];
-        setFiles(files);
-    };
-
+    // 🔐 auth guard — ТОЛЬКО когда puter готов
     useEffect(() => {
-        loadFiles();
-    }, []);
+        if (!puterReady) return;
 
-    useEffect(() => {
         if (!isLoading && !auth.isAuthenticated) {
-            navigate("/auth?next=/wipe");
+            console.log("🔴 Not authenticated → redirect to auth");
+            navigate("/auth?next=/wipe", { replace: true });
         }
-    }, [isLoading]);
+    }, [puterReady, isLoading, auth.isAuthenticated, navigate]);
 
-    const handleDelete = async () => {
-        files.forEach(async (file) => {
-            await fs.delete(file.path);
-        });
-        await kv.flush();
+    // 📂 загрузка файлов (БЕЗ readDir — его нет)
+    useEffect(() => {
+        if (!auth.isAuthenticated) return;
+
+        const loadFiles = async () => {
+            console.log("🟡 Loading files (kv only)");
+            setLoadingFiles(true);
+
+            try {
+                const keys = await kv.get("resume:index");
+                if (!keys) {
+                    setFiles([]);
+                    return;
+                }
+
+                const parsed = JSON.parse(keys);
+                setFiles(parsed);
+            } catch (e) {
+                console.error("Failed to load files", e);
+            } finally {
+                setLoadingFiles(false);
+            }
+        };
+
         loadFiles();
+    }, [auth.isAuthenticated, kv]);
+
+    const handleWipe = async () => {
+        if (!confirm("Are you sure you want to wipe all data?")) return;
+
+        console.log("🔥 WIPING DATA");
+
+        // ❌ fs.delete / kv.flush НЕТ → чистим по ключам
+        try {
+            await kv.set("resume:index", JSON.stringify([]));
+            alert("Data wiped");
+            setFiles([]);
+        } catch (e) {
+            console.error("Wipe failed", e);
+        }
     };
 
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
-
-    if (error) {
-        return <div>Error {error}</div>;
+    if (!puterReady || isLoading) {
+        return <div>Loading Puter...</div>;
     }
 
     return (
-        <div>
-            Authenticated as: {auth.user?.username}
-            <div>Existing files:</div>
-            <div className="flex flex-col gap-4">
-                {files.map((file) => (
-                    <div key={file.id} className="flex flex-row gap-4">
-                        <p>{file.name}</p>
-                    </div>
-                ))}
-            </div>
+        <div className="p-6 space-y-6">
+            <h1 className="text-2xl font-bold">Wipe App Data</h1>
+
+            <p>
+                Logged in as: <b>{auth.user?.username || auth.user?.id}</b>
+            </p>
+
             <div>
-                <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer"
-                    onClick={() => handleDelete()}
-                >
-                    Wipe App Data
-                </button>
+                <h2 className="font-semibold">Stored items:</h2>
+
+                {loadingFiles ? (
+                    <p>Loading…</p>
+                ) : files.length === 0 ? (
+                    <p className="text-gray-500">No stored items</p>
+                ) : (
+                    <ul className="list-disc pl-6">
+                        {files.map((f: any, i) => (
+                            <li key={i}>{JSON.stringify(f)}</li>
+                        ))}
+                    </ul>
+                )}
             </div>
+
+            <button
+                onClick={handleWipe}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+                Wipe App Data
+            </button>
         </div>
     );
 };

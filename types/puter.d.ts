@@ -1,60 +1,122 @@
 import { create } from "zustand";
 
+/* =========================
+   GLOBAL
+========================= */
 declare global {
     interface Window {
         puter: any;
     }
 }
 
+/* =========================
+   TYPES
+========================= */
+export type FSItem = {
+    id: string;
+    name: string;
+    path: string;
+    size?: number;
+    type?: string;
+};
+
+export type KVItem = {
+    key: string;
+    value: string;
+};
+
+export type PuterUser = {
+    id: string;
+    username?: string;
+    email?: string;
+};
+
+export type AIResponse = {
+    message: {
+        content:
+            | string
+            | {
+            text?: string;
+        }[];
+    };
+};
+
 interface PuterStore {
+    puterReady: boolean;
     isLoading: boolean;
     error: string | null;
-    puterReady: boolean;
 
     auth: {
         user: PuterUser | null;
         isAuthenticated: boolean;
         signIn: () => Promise<void>;
         signOut: () => Promise<void>;
-        checkAuthStatus: () => Promise<boolean>;
-        getUser: () => PuterUser | null;
+        checkAuthStatus: () => Promise<void>;
     };
 
     fs: {
-        read: (path: string) => Promise<Blob | undefined>;
-        upload: (files: File[] | Blob[]) => Promise<FSItem | undefined>;
+        read: (path: string) => Promise<Blob | null>;
+        upload: (files: File[] | Blob[]) => Promise<FSItem | null>;
+    };
+
+    kv: {
+        get: (key: string) => Promise<string | null>;
+        set: (key: string, value: string) => Promise<boolean>;
+        list: (pattern: string, returnValues?: boolean) => Promise<KVItem[]>;
     };
 
     ai: {
         feedback: (path: string, message: string) => Promise<AIResponse>;
     };
 
-    kv: {
-        get: (key: string) => Promise<string | null | undefined>;
-        set: (key: string, value: string) => Promise<boolean | undefined>;
-    };
-
     init: () => void;
-    clearError: () => void;
 }
 
+/* =========================
+   HELPERS
+========================= */
 const getPuter = () =>
     typeof window !== "undefined" && window.puter ? window.puter : null;
 
-export const usePuterStore = create<PuterStore>((set, get) => {
-    const setError = (msg: string) => {
-        console.error("PUTER ERROR:", msg);
-        set({ error: msg, isLoading: false });
-    };
+/* =========================
+   STORE
+========================= */
+export const usePuterStore = create<PuterStore>((set, get) => ({
+    puterReady: false,
+    isLoading: false,
+    error: null,
 
-    /* ================= AUTH ================= */
+    /* ---------- AUTH ---------- */
+    auth: {
+        user: null,
+        isAuthenticated: false,
 
-    const checkAuthStatus = async (): Promise<boolean> => {
-        const puter = getPuter();
-        if (!puter) return false;
+        signIn: async () => {
+            const p = getPuter();
+            if (!p) return;
 
-        const isSignedIn = await puter.auth.isSignedIn();
-        if (!isSignedIn) {
+            set({ isLoading: true });
+
+            try {
+                await p.auth.signIn();
+                await get().auth.checkAuthStatus();
+            } catch (e: any) {
+                set({
+                    error:
+                        e?.msg ||
+                        e?.message ||
+                        "Authentication failed",
+                    isLoading: false,
+                });
+            }
+        },
+
+        signOut: async () => {
+            const p = getPuter();
+            if (!p) return;
+
+            await p.auth.signOut();
+
             set({
                 auth: {
                     ...get().auth,
@@ -62,170 +124,104 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                     isAuthenticated: false,
                 },
             });
-            return false;
-        }
+        },
 
-        const user = await puter.auth.getUser();
-        set({
-            auth: {
-                ...get().auth,
-                user,
-                isAuthenticated: true,
-            },
-        });
-        return true;
-    };
+        checkAuthStatus: async () => {
+            const p = getPuter();
+            if (!p) return;
 
-    const signIn = async () => {
-        const puter = getPuter();
-        if (!puter) {
-            setError("Puter not available");
-            return;
-        }
+            const signedIn = await p.auth.isSignedIn();
 
-        set({ isLoading: true, error: null });
-
-        try {
-            await puter.auth.signIn();
-            await checkAuthStatus();
-        } catch (err: any) {
-            // 🔥 ВАЖНО: пользователь просто закрыл окно
-            if (err?.error === "auth_window_closed") {
-                console.warn("Auth popup closed by user");
-                set({ isLoading: false });
+            if (!signedIn) {
+                set({
+                    auth: {
+                        ...get().auth,
+                        user: null,
+                        isAuthenticated: false,
+                    },
+                    isLoading: false,
+                });
                 return;
             }
 
-            console.error("Auth error:", err);
-            setError(err?.msg || "Authentication failed");
-        } finally {
-            set({ isLoading: false });
-        }
-    };
+            const user = await p.auth.getUser();
 
+            set({
+                auth: {
+                    ...get().auth,
+                    user,
+                    isAuthenticated: true,
+                },
+                isLoading: false,
+            });
+        },
+    },
 
-    const signOut = async () => {
-        const puter = getPuter();
-        if (!puter) return setError("Puter not available");
-        await puter.auth.signOut();
-        set({
-            auth: {
-                ...get().auth,
-                user: null,
-                isAuthenticated: false,
-            },
-        });
-    };
+    /* ---------- FS ---------- */
+    fs: {
+        read: async (path: string) => {
+            const p = getPuter();
+            if (!p) return null;
 
-    /* ================= FS ================= */
+            return p.fs.read(path);
+        },
 
-    const fsRead = async (path: string) => {
-        const puter = getPuter();
-        if (!puter) return;
-        return puter.fs.read(path);
-    };
+        upload: async (files) => {
+            const p = getPuter();
+            if (!p) return null;
 
-    const fsUpload = async (files: File[] | Blob[]) => {
-        const puter = getPuter();
-        if (!puter) return;
-        return puter.fs.upload(files);
-    };
+            return p.fs.upload(files);
+        },
+    },
 
-    /* ================= AI (🔥 MOCK – СТАБИЛЬНО) ================= */
+    /* ---------- KV ---------- */
+    kv: {
+        get: async (key) => {
+            const p = getPuter();
+            if (!p) return null;
 
-    const feedback = async (_path: string, _message: string) => {
-        // 🔥 MOCK RESPONSE — НИКАКОГО PUTER AI
-        return {
+            return p.kv.get(key);
+        },
+
+        set: async (key, value) => {
+            const p = getPuter();
+            if (!p) return false;
+
+            return p.kv.set(key, value);
+        },
+
+        list: async (pattern, returnValues = false) => {
+            const p = getPuter();
+            if (!p) return [];
+
+            return p.kv.list(pattern, returnValues);
+        },
+    },
+
+    /* ---------- AI (MOCK SAFE) ---------- */
+    ai: {
+        feedback: async () => ({
             message: {
                 content: JSON.stringify({
-                    overallScore: 82,
-                    ATS: {
-                        score: 76,
-                        tips: [
-                            "Add measurable achievements",
-                            "Use more ATS keywords from job description",
-                            "Improve resume summary clarity",
-                        ],
-                    },
-                    strengths: [
-                        "Relevant technical stack",
-                        "Clear project structure",
-                        "Good formatting",
-                    ],
-                    weaknesses: [
-                        "Not enough quantified impact",
-                        "Summary too generic",
-                    ],
-                    suggestions: [
-                        "Add metrics (%, $, numbers)",
-                        "Tailor resume per job application",
-                    ],
+                    overallScore: 80,
+                    ATS: { score: 75, tips: [] },
+                    toneAndStyle: { score: 80, tips: [] },
+                    content: { score: 78, tips: [] },
+                    structure: { score: 74, tips: [] },
+                    skills: { score: 85, tips: [] },
                 }),
             },
-        } as AIResponse;
-    };
+        }),
+    },
 
-    /* ================= KV ================= */
-
-    const kvGet = async (key: string) => {
-        const puter = getPuter();
-        if (!puter) return;
-        return puter.kv.get(key);
-    };
-
-    const kvSet = async (key: string, value: string) => {
-        const puter = getPuter();
-        if (!puter) return;
-        return puter.kv.set(key, value);
-    };
-
-    /* ================= INIT ================= */
-
-    const init = () => {
-        if (getPuter()) {
-            set({ puterReady: true });
-            checkAuthStatus();
-            return;
-        }
-
-        const interval = setInterval(() => {
+    /* ---------- INIT ---------- */
+    init: () => {
+        const i = setInterval(() => {
             if (getPuter()) {
-                clearInterval(interval);
+                clearInterval(i);
                 set({ puterReady: true });
-                checkAuthStatus();
+                get().auth.checkAuthStatus();
             }
         }, 100);
-    };
-
-    return {
-        isLoading: false,
-        error: null,
-        puterReady: false,
-
-        auth: {
-            user: null,
-            isAuthenticated: false,
-            signIn,
-            signOut,
-            checkAuthStatus,
-            getUser: () => get().auth.user,
-        },
-
-        fs: {
-            read: fsRead,
-            upload: fsUpload,
-        },
-
-        ai: {
-            feedback,
-        },
-
-        kv: {
-            get: kvGet,
-            set: kvSet,
-        },
-
-        init,
-        clearError: () => set({ error: null }),
-    };
-});
+    },
+}));

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePuterStore } from "~/lib/puter";
 
 import Summary from "~/components/Summary";
@@ -13,56 +13,91 @@ export const meta = () => [
 
 const Resume = () => {
     const { auth, isLoading, fs, kv } = usePuterStore();
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [resumeUrl, setResumeUrl] = useState("");
+    const [resumeUrl, setResumeUrl] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
+    const objectUrlRef = useRef<string | null>(null);
+
+    /* 🔐 AUTH GUARD */
     useEffect(() => {
         if (!isLoading && !auth.isAuthenticated) {
-            navigate(`/auth?next=/resume/${id}`);
+            navigate(`/auth?next=/resume/${id}`, { replace: true });
         }
-    }, [isLoading, auth.isAuthenticated, id]);
+    }, [isLoading, auth.isAuthenticated, id, navigate]);
 
+    /* 📄 LOAD RESUME + FEEDBACK */
     useEffect(() => {
+        if (!id || !kv || !fs) return;
+
+        let cancelled = false;
+
         const loadResume = async () => {
-            if (!id) return;
+            try {
+                setLoading(true);
 
-            const stored = await kv.get(`resume:${id}`);
-            if (!stored) return;
+                const stored = await kv.get(`resume:${id}`);
+                if (!stored || cancelled) return;
 
-            const data = JSON.parse(stored);
+                const data = JSON.parse(stored);
 
-            // 📄 PDF preview
-            const resumeBlob = await fs.read(data.resumePath);
-            if (resumeBlob) {
-                const pdfBlob = new Blob([resumeBlob], {
-                    type: "application/pdf",
-                });
-                setResumeUrl(URL.createObjectURL(pdfBlob));
+                /* ---------- PDF ---------- */
+                if (data.resumePath && typeof fs.read === "function") {
+                    const blob = await fs.read(data.resumePath);
+
+                    if (blob instanceof Blob && !cancelled) {
+                        const url = URL.createObjectURL(
+                            new Blob([blob], { type: "application/pdf" })
+                        );
+
+                        objectUrlRef.current = url;
+                        setResumeUrl(url);
+                    }
+                }
+
+                /* ---------- FEEDBACK ---------- */
+                if (!cancelled) {
+                    setFeedback(data.feedback ?? null);
+                }
+            } catch (err) {
+                console.error("❌ Failed to load resume", err);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-
-            setFeedback(data.feedback);
         };
 
         loadResume();
-    }, [id]);
+
+        return () => {
+            cancelled = true;
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
+            }
+        };
+    }, [id, kv, fs]);
 
     const hasStructuredFeedback =
-        feedback &&
-        typeof feedback === "object" &&
-        !feedback.raw;
+        feedback && typeof feedback === "object" && !feedback.raw;
+
+    /* ⏳ LOADING */
+    if (loading) {
+        return (
+            <main className="flex items-center justify-center min-h-screen">
+                <img src="/images/resume-scan-2.gif" className="w-[200px]" />
+            </main>
+        );
+    }
 
     return (
         <main className="!pt-0">
+            {/* NAV */}
             <nav className="resume-nav">
                 <Link to="/" className="back-button">
-                    <img
-                        src="/icons/back.svg"
-                        alt="back"
-                        className="w-2.5 h-2.5"
-                    />
+                    <img src="/icons/back.svg" alt="back" className="w-2.5 h-2.5" />
                     <span className="text-gray-800 text-sm font-semibold">
                         Back to Homepage
                     </span>
@@ -77,7 +112,7 @@ const Resume = () => {
                             href={resumeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="gradient-border animate-in fade-in duration-1000"
+                            className="gradient-border animate-in fade-in duration-700"
                         >
                             <embed
                                 src={resumeUrl}
@@ -86,24 +121,18 @@ const Resume = () => {
                             />
                         </a>
                     ) : (
-                        <img
-                            src="/images/resume-scan-2.gif"
-                            className="w-full"
-                        />
+                        <img src="/images/resume-scan-2.gif" className="w-full" />
                     )}
                 </section>
 
                 {/* FEEDBACK */}
                 <section className="feedback-section">
-                    <h2 className="text-4xl !text-black font-bold">
+                    <h2 className="text-4xl !text-black font-bold mb-6">
                         Resume Review
                     </h2>
 
                     {!feedback && (
-                        <img
-                            src="/images/resume-scan-2.gif"
-                            className="w-full"
-                        />
+                        <img src="/images/resume-scan-2.gif" className="w-full" />
                     )}
 
                     {feedback?.raw && (
@@ -118,7 +147,7 @@ const Resume = () => {
                     )}
 
                     {hasStructuredFeedback && (
-                        <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
+                        <div className="flex flex-col gap-8 animate-in fade-in duration-700">
                             <Summary feedback={feedback} />
                             <ATS
                                 score={feedback.ATS?.score || 0}

@@ -7,13 +7,6 @@
     <list default="true" id="476fc732-c1a4-4219-bd8a-905821243526" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/app.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/app.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/root.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/auth.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/auth.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/upload.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/upload.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/wipe.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/wipe.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/types/puter.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/types/puter.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/сonstants/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/сonstants/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -125,7 +118,7 @@
       <workItem from="1764922969891" duration="1078000" />
       <workItem from="1765035360019" duration="1053000" />
       <workItem from="1765169348467" duration="305000" />
-      <workItem from="1765863148989" duration="7003000" />
+      <workItem from="1765863148989" duration="7224000" />
     </task>
     <servers />
   </component>

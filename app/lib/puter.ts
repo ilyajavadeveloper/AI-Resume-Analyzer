@@ -12,12 +12,23 @@ declare global {
 /* =========================
    TYPES
 ========================= */
+export type PuterUser = {
+    id: string;
+    username?: string;
+    email?: string;
+};
+
 export type FSItem = {
     id: string;
     name: string;
     path: string;
     size?: number;
     type?: string;
+};
+
+export type KVItem = {
+    key: string;
+    value: string;
 };
 
 export type AIResponse = {
@@ -30,20 +41,6 @@ export type AIResponse = {
     };
 };
 
-export type PuterUser = {
-    id: string;
-    username?: string;
-    email?: string;
-};
-
-export type KVItem = {
-    key: string;
-    value: string;
-};
-
-/* =========================
-   STORE TYPE
-========================= */
 interface PuterStore {
     puterReady: boolean;
     isLoading: boolean;
@@ -54,25 +51,21 @@ interface PuterStore {
         isAuthenticated: boolean;
         signIn: () => Promise<void>;
         signOut: () => Promise<void>;
-        checkAuthStatus: () => Promise<boolean>;
+        checkAuthStatus: () => Promise<void>;
     };
 
     fs: {
-        read: (path: string) => Promise<Blob | undefined>;
-        upload: (files: File[] | Blob[]) => Promise<FSItem | undefined>;
-    };
-
-    ai: {
-        feedback: (path: string, message: string) => Promise<AIResponse>;
+        upload: (files: File[]) => Promise<FSItem>;
     };
 
     kv: {
-        get: (key: string) => Promise<string | null | undefined>;
-        set: (key: string, value: string) => Promise<boolean | undefined>;
-        list: (
-            pattern: string,
-            returnValues?: boolean
-        ) => Promise<KVItem[] | string[]>;
+        get: (key: string) => Promise<string | null>;
+        set: (key: string, value: string) => Promise<void>;
+        list: (pattern: string, withValues?: boolean) => Promise<KVItem[]>;
+    };
+
+    ai: {
+        feedback: (path: string, prompt: string) => Promise<AIResponse>;
     };
 
     init: () => void;
@@ -87,7 +80,7 @@ const getPuter = () =>
 /* =========================
    STORE
 ========================= */
-export const usePuterStore = create<PuterStore>((set) => ({
+export const usePuterStore = create<PuterStore>((set, get) => ({
     puterReady: false,
     isLoading: false,
     error: null,
@@ -100,109 +93,125 @@ export const usePuterStore = create<PuterStore>((set) => ({
         signIn: async () => {
             const p = getPuter();
             if (!p) return;
-            await p.auth.signIn();
+
+            set({ isLoading: true, error: null });
+
+            try {
+                await p.auth.signIn();
+                await get().auth.checkAuthStatus();
+            } catch (err: any) {
+                set({
+                    error:
+                        err?.msg ||
+                        err?.message ||
+                        "Auth popup closed",
+                    isLoading: false,
+                });
+            }
         },
 
         signOut: async () => {
             const p = getPuter();
             if (!p) return;
+
             await p.auth.signOut();
-            set((s) => ({
+
+            set({
                 auth: {
-                    ...s.auth,
+                    ...get().auth,
                     user: null,
                     isAuthenticated: false,
                 },
-            }));
+            });
         },
 
         checkAuthStatus: async () => {
             const p = getPuter();
-            if (!p) return false;
+            if (!p) return;
 
             const signedIn = await p.auth.isSignedIn();
             if (!signedIn) {
-                set((s) => ({
+                set({
                     auth: {
-                        ...s.auth,
+                        ...get().auth,
                         user: null,
                         isAuthenticated: false,
                     },
-                }));
-                return false;
+                    isLoading: false,
+                });
+                return;
             }
 
             const user = await p.auth.getUser();
-            set((s) => ({
+
+            set({
                 auth: {
-                    ...s.auth,
+                    ...get().auth,
                     user,
                     isAuthenticated: true,
                 },
-            }));
-
-            return true;
+                isLoading: false,
+            });
         },
     },
 
     /* ---------- FS ---------- */
     fs: {
-        read: async (path) => {
-            const p = getPuter();
-            if (!p) return;
-            return p.fs.read(path);
-        },
-
         upload: async (files) => {
             const p = getPuter();
-            if (!p) return;
-            return p.fs.upload(files);
-        },
-    },
+            if (!p) throw new Error("Puter not ready");
 
-    /* ---------- AI (MOCK — СТАБИЛЬНО) ---------- */
-    ai: {
-        feedback: async () => ({
-            message: {
-                content: JSON.stringify({
-                    overallScore: 78,
-                    ATS: { score: 72, tips: [] },
-                    toneAndStyle: { score: 80, tips: [] },
-                    content: { score: 75, tips: [] },
-                    structure: { score: 70, tips: [] },
-                    skills: { score: 85, tips: [] },
-                }),
-            },
-        }),
+            const result = await p.fs.upload(files);
+            return result;
+        },
     },
 
     /* ---------- KV ---------- */
     kv: {
         get: async (key) => {
             const p = getPuter();
-            if (!p) return;
+            if (!p) return null;
             return p.kv.get(key);
         },
 
         set: async (key, value) => {
             const p = getPuter();
             if (!p) return;
-            return p.kv.set(key, value);
+            await p.kv.set(key, value);
         },
 
-        list: async (pattern, returnValues = false) => {
+        list: async (pattern) => {
             const p = getPuter();
             if (!p) return [];
-            return p.kv.list(pattern, returnValues);
+
+            const keys = await p.kv.list(pattern, true);
+            return keys as KVItem[];
         },
+    },
+
+    /* ---------- AI (MOCK) ---------- */
+    ai: {
+        feedback: async () => ({
+            message: {
+                content: JSON.stringify({
+                    overallScore: 82,
+                    ATS: { score: 76, tips: [] },
+                    toneAndStyle: { score: 80, tips: [] },
+                    content: { score: 78, tips: [] },
+                    structure: { score: 74, tips: [] },
+                    skills: { score: 85, tips: [] },
+                }),
+            },
+        }),
     },
 
     /* ---------- INIT ---------- */
     init: () => {
-        const interval = setInterval(() => {
+        const i = setInterval(() => {
             if (getPuter()) {
-                clearInterval(interval);
+                clearInterval(i);
                 set({ puterReady: true });
+                get().auth.checkAuthStatus();
             }
         }, 100);
     },

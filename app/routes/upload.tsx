@@ -5,20 +5,15 @@ import Navbar from "~/components/Navbar";
 import FileUploader from "~/components/FileUploader";
 import { usePuterStore } from "~/lib/puter";
 import { generateUUID } from "~/lib/utils";
-import {prepareInstructions} from "../../сonstants";
-
+import { prepareInstructions } from "../../сonstants";
 
 const Upload = () => {
     const { fs, ai, kv, puterReady } = usePuterStore();
     const navigate = useNavigate();
 
+    const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusText, setStatusText] = useState("");
-    const [file, setFile] = useState<File | null>(null);
-
-    const handleFileSelect = (selected: File | null) => {
-        setFile(selected);
-    };
 
     const handleAnalyze = async ({
                                      companyName,
@@ -46,10 +41,9 @@ const Upload = () => {
             }
 
             /* ---------- SAVE BASE ---------- */
-            setStatusText("Saving resume data...");
             const id = generateUUID();
 
-            const resumeData = {
+            const baseData = {
                 id,
                 resumePath: uploaded.path,
                 companyName,
@@ -58,9 +52,9 @@ const Upload = () => {
                 feedback: null,
             };
 
-            await kv.set(`resume:${id}`, JSON.stringify(resumeData));
+            await kv.set(`resume:${id}`, JSON.stringify(baseData));
 
-            /* ---------- AI (MOCK / SAFE) ---------- */
+            /* ---------- AI ---------- */
             setStatusText("Analyzing resume...");
 
             const response = await ai.feedback(
@@ -68,21 +62,21 @@ const Upload = () => {
                 prepareInstructions({ jobTitle, jobDescription })
             );
 
-            const content =
+            const raw =
                 typeof response.message.content === "string"
                     ? response.message.content
                     : response.message.content?.[0]?.text ?? "";
 
             let feedback;
             try {
-                feedback = JSON.parse(content);
+                feedback = JSON.parse(raw);
             } catch {
-                feedback = { raw: content };
+                feedback = { raw };
             }
 
             await kv.set(
                 `resume:${id}`,
-                JSON.stringify({ ...resumeData, feedback })
+                JSON.stringify({ ...baseData, feedback })
             );
 
             /* ---------- DONE ---------- */
@@ -104,9 +98,9 @@ const Upload = () => {
         const formData = new FormData(e.currentTarget);
 
         handleAnalyze({
-            companyName: (formData.get("company-name") as string) || "",
-            jobTitle: (formData.get("job-title") as string) || "",
-            jobDescription: (formData.get("job-description") as string) || "",
+            companyName: String(formData.get("company-name") || ""),
+            jobTitle: String(formData.get("job-title") || ""),
+            jobDescription: String(formData.get("job-description") || ""),
             file,
         });
     };
@@ -130,7 +124,8 @@ const Upload = () => {
                         </>
                     ) : (
                         <h2>
-                            Drop your resume for an ATS score and improvement tips
+                            Drop your resume for an ATS score and improvement
+                            tips
                         </h2>
                     )}
 
@@ -143,17 +138,22 @@ const Upload = () => {
                                 name="company-name"
                                 placeholder="Company Name"
                             />
+
                             <input
                                 name="job-title"
                                 placeholder="Job Title"
                             />
+
                             <textarea
                                 name="job-description"
                                 rows={5}
                                 placeholder="Job Description"
                             />
 
-                            <FileUploader onFileSelect={handleFileSelect} />
+                            <FileUploader
+                                file={file}
+                                onFileSelect={setFile}
+                            />
 
                             <button
                                 type="submit"
